@@ -1,0 +1,118 @@
+using FluentValidation;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore;
+using TaskTracker.Api.Common.Authorization;
+using TaskTracker.Api.Common.Caching;
+using TaskTracker.Api.Common.Endpoints;
+using TaskTracker.Api.Common.Filters;
+using TaskTracker.Api.Common.Results;
+using TaskTracker.Api.Common.Security;
+using TaskTracker.Api.Domain.Entities;
+using TaskTracker.Api.Domain.Enums;
+using TaskTracker.Api.Domain.Errors;
+using TaskTracker.Api.Persistence;
+
+namespace TaskTracker.Api.Features.__FEATURE_NAME__;
+
+/// <summary>
+/// Slice: __USE_CASE_NAME__
+/// Encapsulates Request, Response, Validator, Handler, and Endpoint in a single file.
+/// Talks directly to AppDbContext without intermediate repositories or mediator libraries.
+/// </summary>
+public static class __USE_CASE_NAME__
+{
+    public sealed record Request(Guid ProjectId, string Title);
+
+    public sealed record BodyPayload(string Title);
+
+    public sealed record Response(Guid Id, Guid ProjectId, string Title, uint RowVersion);
+
+    public sealed class Validator : AbstractValidator<Request>
+    {
+        public Validator()
+        {
+            RuleFor(x => x.ProjectId)
+                .NotEmpty().WithMessage("Project identifier is required.");
+
+            RuleFor(x => x.Title)
+                .NotEmpty().WithMessage("Title is required.")
+                .MaximumLength(200).WithMessage("Title must not exceed 200 characters.");
+        }
+    }
+
+    public sealed class Handler(
+        AppDbContext dbContext,
+        IProjectAccessService projectAccess,
+        ICurrentUser currentUser,
+        ICacheInvalidator cacheInvalidator,
+        TimeProvider timeProvider)
+    {
+        public async Task<Result<Response>> HandleAsync(Request request, CancellationToken cancellationToken)
+        {
+            // 1. Authorize: Evaluate project-level role permissions against database
+            var accessResult = await projectAccess.EnsureAccessAsync(
+                request.ProjectId,
+                ProjectRole.Editor,
+                cancellationToken);
+
+            if (accessResult.IsFailure)
+            {
+                return accessResult.Error;
+            }
+
+            // 2. Execute Domain logic & Invariant checks
+            // Handler orchestrates: load entity -> execute method -> save -> map to response
+            var id = Guid.CreateVersion7();
+
+            // 3. Persist changes
+            // dbContext.Tasks.Add(task);
+            await dbContext.SaveChangesAsync(cancellationToken);
+
+            // 4. Invalidate related caches
+            // await cacheInvalidator.InvalidateTaskAsync(request.ProjectId, id, cancellationToken);
+
+            return new Response(id, request.ProjectId, request.Title, 1u);
+        }
+    }
+
+    public sealed class Endpoint : IEndpoint
+    {
+        public void MapEndpoint(IEndpointRouteBuilder app)
+        {
+            app.MapPost("/projects/{projectId:guid}/__ROUTE_SLUG__", async (
+                Guid projectId,
+                BodyPayload body,
+                Handler handler,
+                HttpContext httpContext,
+                CancellationToken ct) =>
+            {
+                var request = new Request(projectId, body.Title);
+                var result = await handler.HandleAsync(request, ct);
+                if (result.IsFailure)
+                {
+                    return result.ToHttpResult();
+                }
+
+                ETagHelper.SetETagAndCacheControl(httpContext, result.Value.RowVersion);
+                return TypedResults.Created($"/api/v1/projects/{projectId}/__ROUTE_SLUG__/{result.Value.Id}", result.Value);
+            })
+            .RequireAuthorization(AuthConstants.Policies.Write)
+            .RequireRateLimiting("write")
+            .AddEndpointFilter<ValidationFilter<Request>>()
+            .AddEndpointFilter<IdempotencyFilter>()
+            .WithTags("__FEATURE_NAME__")
+            .WithSummary("__USE_CASE_NAME__")
+            .WithDescription("Self-contained vertical slice use case.")
+            .Produces<Response>(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests);
+        }
+    }
+}
