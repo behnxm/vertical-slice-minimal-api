@@ -10,5 +10,14 @@
     <NuGetAudit>true</NuGetAudit>
     <NuGetAuditMode>all</NuGetAuditMode>
     <WarningsAsErrors>$(WarningsAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
+
+    <!-- Justified Analyzer Suppressions:
+         CA1716: Identifiers should not match language keywords (Error keyword in Visual Basic; this solution is pure C#)
+         CA1000: Do not declare static members on generic types (Standard functional Result<T> pattern in modern C#)
+         CA1861: Prefer static readonly fields over constant array arguments (Appears in EF Core auto-generated migrations)
+         CA1707: Identifiers should not contain underscores (Standard BDD/AAA unit test method naming convention)
+         xUnit1051: Methods accepting CancellationToken should use TestContext.Current.CancellationToken
+    -->
+    <NoWarn>$(NoWarn);CA1716;CA1000;CA1861;CA1707;xUnit1051</NoWarn>
   </PropertyGroup>
 </Project>
