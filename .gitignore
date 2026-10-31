@@ -1,0 +1,33 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio / VS Code / JetBrains
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Secrets and local config (Ground Rule 6: No secrets in git, ever)
+.env
+*.pem
+*.key
+dev-keys/
+keys/
+secrets/
+appsettings.Development.local.json
+appsettings.Local.json
+
+# Testcontainers / Docker local mounts
+.docker/
+test-results/
+coverage/
+
+# OS files
+.DS_Store
+Thumbs.db
