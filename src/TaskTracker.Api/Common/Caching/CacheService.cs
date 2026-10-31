@@ -20,6 +20,7 @@ public interface ICacheService
 public interface ICacheInvalidator
 {
     Task InvalidateProjectAsync(Guid projectId, string userId, CancellationToken cancellationToken = default);
+    Task InvalidateTaskAsync(Guid projectId, Guid taskId, CancellationToken cancellationToken = default);
 }
 
 public interface ICacheHealthTracker
@@ -152,6 +153,13 @@ public sealed partial class CacheService : ICacheService, ICacheInvalidator
         // 2. Tag invalidations for related entities
         await RemoveByTagAsync(CacheConstants.ProjectTag(projectId), cancellationToken);
         await RemoveByTagAsync(CacheConstants.UserTag(userId), cancellationToken);
+    }
+
+    public async Task InvalidateTaskAsync(Guid projectId, Guid taskId, CancellationToken cancellationToken = default)
+    {
+        await RemoveAsync(CacheConstants.TaskKey(taskId), cancellationToken);
+        await RemoveAsync(CacheConstants.ProjectSummaryKey(projectId), cancellationToken);
+        await RemoveByTagAsync(CacheConstants.TaskTag(taskId), cancellationToken);
     }
 
     private static string GetPrefix(string key)

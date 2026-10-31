@@ -54,6 +54,9 @@ public static class DomainErrors
         public static readonly Error NotFound = Error.NotFound(
             "task.not_found", "The specified task was not found.");
 
+        public static readonly Error NotDeleted = Error.Conflict(
+            "task.not_deleted", "The specified task is not deleted.");
+
         public static readonly Error InvalidStatusTransition = Error.Conflict(
             "task.invalid_status_transition", "The requested task status transition is invalid.");
 

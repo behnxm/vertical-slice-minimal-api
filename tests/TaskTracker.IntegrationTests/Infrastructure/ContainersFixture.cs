@@ -6,11 +6,14 @@ using Testcontainers.Redis;
 using Xunit;
 
 [assembly: AssemblyFixture(typeof(TaskTracker.IntegrationTests.Infrastructure.ContainersFixture))]
+[assembly: Xunit.v3.Parallelization(Mode = Xunit.Sdk.ParallelMode.None)]
 
 namespace TaskTracker.IntegrationTests.Infrastructure;
 
 public sealed class ContainersFixture : IAsyncLifetime
 {
+    private static readonly SemaphoreSlim ResetLock = new(1, 1);
+
     private readonly PostgreSqlContainer _postgreSqlContainer = new PostgreSqlBuilder("postgres:17.11-alpine")
         .WithDatabase("tasktracker_test")
         .WithUsername("test_user")
@@ -21,7 +24,6 @@ public sealed class ContainersFixture : IAsyncLifetime
         .Build();
 
     private Respawner? _respawner;
-    private DbConnection? _dbConnection;
 
     public string PostgreSqlConnectionString => _postgreSqlContainer.GetConnectionString();
     public string ValkeyConnectionString => _valkeyContainer.GetConnectionString();
@@ -31,38 +33,53 @@ public sealed class ContainersFixture : IAsyncLifetime
         await Task.WhenAll(
             _postgreSqlContainer.StartAsync(),
             _valkeyContainer.StartAsync());
-
-        _dbConnection = new NpgsqlConnection(PostgreSqlConnectionString);
-        await _dbConnection.OpenAsync();
     }
 
     public async Task InitializeRespawnerAsync()
     {
-        if (_respawner is not null || _dbConnection is null) return;
+        if (_respawner is not null) return;
 
-        _respawner = await Respawner.CreateAsync(_dbConnection, new RespawnerOptions
+        await ResetLock.WaitAsync();
+        try
         {
-            DbAdapter = DbAdapter.Postgres,
-            SchemasToInclude = ["public"],
-            TablesToIgnore = ["__EFMigrationsHistory"]
-        });
+            if (_respawner is not null) return;
+
+            await using var conn = new NpgsqlConnection(PostgreSqlConnectionString);
+            await conn.OpenAsync();
+
+            _respawner = await Respawner.CreateAsync(conn, new RespawnerOptions
+            {
+                DbAdapter = DbAdapter.Postgres,
+                SchemasToInclude = ["public"],
+                TablesToIgnore = ["__EFMigrationsHistory"]
+            });
+        }
+        finally
+        {
+            ResetLock.Release();
+        }
     }
 
     public async Task ResetDatabaseAsync()
     {
-        if (_respawner is not null && _dbConnection is not null)
+        await ResetLock.WaitAsync();
+        try
         {
-            await _respawner.ResetAsync(_dbConnection);
+            if (_respawner is not null)
+            {
+                await using var conn = new NpgsqlConnection(PostgreSqlConnectionString);
+                await conn.OpenAsync();
+                await _respawner.ResetAsync(conn);
+            }
+        }
+        finally
+        {
+            ResetLock.Release();
         }
     }
 
     public async ValueTask DisposeAsync()
     {
-        if (_dbConnection is not null)
-        {
-            await _dbConnection.DisposeAsync();
-        }
-
         await Task.WhenAll(
             _postgreSqlContainer.DisposeAsync().AsTask(),
             _valkeyContainer.DisposeAsync().AsTask());

@@ -184,8 +184,9 @@ public class ArchitectureTests
         // IgnoreQueryFilters is only permitted in explicitly allowlisted classes and background jobs
         var allowlist = new HashSet<string>
         {
-            "TaskTracker.Api.Infrastructure.CliCommandHandler"
-            // Future slices like RestoreTask and PurgeService will be allowlisted here
+            "TaskTracker.Api.Infrastructure.CliCommandHandler",
+            "TaskTracker.Api.Features.Tasks.RestoreTask+Handler",
+            "TaskTracker.Api.Infrastructure.Background.SoftDeletePurgeService"
         };
 
         // Inspect method bodies via IL or instruction scanning
