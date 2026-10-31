@@ -117,7 +117,7 @@ public static class DomainErrors
 
     public static class Idempotency
     {
-        public static readonly Error Mismatch = Error.Validation(
+        public static readonly Error Mismatch = Error.UnprocessableContent(
             "idempotency.mismatch", "The provided Idempotency-Key was already used with a different request payload.");
 
         public static readonly Error InProgress = Error.Conflict(

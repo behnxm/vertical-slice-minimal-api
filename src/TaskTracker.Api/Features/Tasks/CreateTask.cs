@@ -198,6 +198,7 @@ public static class CreateTask
             })
             .RequireAuthorization(AuthConstants.Policies.Write)
             .RequireRateLimiting("write")
+            .AddEndpointFilter<IdempotencyFilter>()
             .WithTags("Tasks")
             .WithSummary("Create Task")
             .WithDescription("Creates a new task within a project. Requires Editor or Owner role.")
@@ -207,6 +208,7 @@ public static class CreateTask
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
             .ProducesProblem(StatusCodes.Status429TooManyRequests);
         }
     }

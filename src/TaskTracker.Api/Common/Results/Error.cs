@@ -12,6 +12,7 @@ public enum ErrorType
     Conflict,
     PreconditionFailed,
     PreconditionRequired,
+    UnprocessableContent,
     TooManyRequests,
     Failure
 }
@@ -47,6 +48,9 @@ public sealed record Error(
 
     public static Error PreconditionRequired(string code, string description) =>
         new(code, description, ErrorType.PreconditionRequired);
+
+    public static Error UnprocessableContent(string code, string description) =>
+        new(code, description, ErrorType.UnprocessableContent);
 
     public static Error TooManyRequests(string code, string description) =>
         new(code, description, ErrorType.TooManyRequests);

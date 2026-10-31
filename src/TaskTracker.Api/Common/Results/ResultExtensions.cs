@@ -39,6 +39,7 @@ public static class ResultExtensions
             ErrorType.Conflict => StatusCodes.Status409Conflict,
             ErrorType.PreconditionFailed => StatusCodes.Status412PreconditionFailed,
             ErrorType.PreconditionRequired => StatusCodes.Status428PreconditionRequired,
+            ErrorType.UnprocessableContent => StatusCodes.Status422UnprocessableEntity,
             ErrorType.TooManyRequests => StatusCodes.Status429TooManyRequests,
             ErrorType.Failure => StatusCodes.Status500InternalServerError,
             _ => StatusCodes.Status500InternalServerError
@@ -70,6 +71,7 @@ public static class ResultExtensions
         ErrorType.Conflict => "Conflict",
         ErrorType.PreconditionFailed => "Precondition Failed",
         ErrorType.PreconditionRequired => "Precondition Required",
+        ErrorType.UnprocessableContent => "Unprocessable Content",
         ErrorType.TooManyRequests => "Too Many Requests",
         ErrorType.Failure => "Internal Server Error",
         _ => "An error occurred"

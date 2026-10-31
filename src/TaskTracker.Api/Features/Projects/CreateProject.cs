@@ -110,11 +110,17 @@ public static class CreateProject
                 CancellationToken ct) =>
             {
                 var result = await handler.HandleAsync(request, ct);
-                return result.ToCreatedHttpResult($"/api/v1/projects/{result.Value?.Id}");
+                if (result.IsFailure)
+                {
+                    return result.ToHttpResult();
+                }
+
+                return TypedResults.Created($"/api/v1/projects/{result.Value.Id}", result.Value);
             })
             .RequireAuthorization(AuthConstants.Policies.Write)
             .RequireRateLimiting("write")
             .AddEndpointFilter<ValidationFilter<Request>>()
+            .AddEndpointFilter<IdempotencyFilter>()
             .WithTags("Projects")
             .WithSummary("Create Project")
             .WithDescription("Creates a new project workspace. The caller automatically becomes an Owner.")
@@ -122,6 +128,8 @@ public static class CreateProject
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status422UnprocessableEntity)
             .ProducesProblem(StatusCodes.Status429TooManyRequests);
         }
     }

@@ -1,7 +1,10 @@
 using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using StackExchange.Redis;
 using TaskTracker.Api.Common.Caching;
+using TaskTracker.Api.Common.Filters;
+using TaskTracker.Api.Common.Idempotency;
 
 namespace TaskTracker.Api.Infrastructure;
 
@@ -15,11 +18,20 @@ public static class CachingExtensions
 
         if (!string.IsNullOrWhiteSpace(valkeyConnectionString))
         {
+            var multiplexer = ConnectionMultiplexer.Connect(valkeyConnectionString);
+            services.AddSingleton<IConnectionMultiplexer>(multiplexer);
+
             services.AddStackExchangeRedisCache(options =>
             {
                 options.Configuration = valkeyConnectionString;
                 options.InstanceName = "tasktracker:";
             });
+
+            services.AddSingleton<IIdempotencyStore, ValkeyIdempotencyStore>();
+        }
+        else
+        {
+            services.AddSingleton<IIdempotencyStore, InMemoryIdempotencyStore>();
         }
 
 #pragma warning disable EXTEXP0018 // HybridCache is in preview / experimental package in some builds
@@ -38,6 +50,7 @@ public static class CachingExtensions
         services.AddScoped<CacheService>();
         services.AddScoped<ICacheService>(sp => sp.GetRequiredService<CacheService>());
         services.AddScoped<ICacheInvalidator>(sp => sp.GetRequiredService<CacheService>());
+        services.AddTransient<IdempotencyFilter>();
 
         return services;
     }

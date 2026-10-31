@@ -48,6 +48,9 @@ public sealed class RequestHardeningMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext context)
     {
+        // Enable buffering for request body inspection and idempotency hashing
+        context.Request.EnableBuffering();
+
         // Enforce 64 KB body size limit
         if (context.Request.ContentLength.HasValue && context.Request.ContentLength.Value > JsonExtensions.MaxRequestBodySizeBytes)
         {
