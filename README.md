@@ -25,6 +25,8 @@ In this repository, **the feature is the unit of change**. Each use case is an a
 
 Shared code is kept deliberately minimal, governed by the "Rule of Three", and policed by automated architecture tests.
 
+> 💡 **New to Vertical Slice Architecture?** Read the [Beginner's Guide (Junior to Senior)](docs/BEGINNERS-GUIDE.md) for conceptual fundamentals and the [Step-by-Step User Manual Walkthrough](docs/WALKTHROUGH.md) for hands-on execution.
+
 ---
 
 ## Architectural Workflow
@@ -257,6 +259,8 @@ To maintain gold-standard quality and security, the following were deliberate no
 
 ## Architectural Documentation Index
 
+- [Beginner's Guide: Understanding Vertical Slice Architecture](docs/BEGINNERS-GUIDE.md)
+- [User Manual: End-to-End Walkthrough & API Testing](docs/WALKTHROUGH.md)
 - [Architecture: Vertical Slices Deep Dive](docs/architecture/vertical-slices.md)
 - [Architecture: Data Model & PostgreSQL Indexes](docs/architecture/data-model.md)
 - [Architecture: HybridCache & Valkey Topology](docs/architecture/caching.md)
