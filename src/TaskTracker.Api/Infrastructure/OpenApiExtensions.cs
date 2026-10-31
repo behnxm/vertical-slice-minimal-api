@@ -45,12 +45,14 @@ public static class OpenApiExtensions
 
     public static IEndpointRouteBuilder MapTaskTrackerOpenApi(this IEndpointRouteBuilder app)
     {
-        app.MapOpenApi();
+        app.MapOpenApi()
+           .AllowAnonymous();
+
         app.MapScalarApiReference(options =>
         {
             options.WithTitle("Task Tracker API")
                    .WithTheme(ScalarTheme.Moon);
-        });
+        }).AllowAnonymous();
 
         return app;
     }

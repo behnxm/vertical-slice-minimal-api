@@ -24,6 +24,9 @@ builder.Services.AddTaskTrackerTelemetry(builder.Configuration, builder.Environm
 builder.Services.AddTaskTrackerHealthChecks(builder.Configuration);
 builder.Services.AddTaskTrackerOpenApi();
 
+// Background maintenance services
+builder.Services.AddHostedService<TaskTracker.Api.Infrastructure.Background.SoftDeletePurgeService>();
+
 // Assembly scanning for vertical slice components
 builder.Services.AddValidatorsFromAssembly(typeof(Program).Assembly);
 builder.Services.AddSliceHandlers(typeof(Program).Assembly, builder.Configuration);
